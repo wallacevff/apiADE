@@ -18,7 +18,7 @@ export class UsuarioController {
     }
     static GetUsuByEmail = async (req: Request, res: Response) => {
         try {
-            console.log(req.body);
+            //console.log(req.body);
             const usu = req.body.email;
             const foundUser: Array<UsuarioModel> = await UsuarioService.GetUserByEmail(usu);
             if (!foundUser[0]) {

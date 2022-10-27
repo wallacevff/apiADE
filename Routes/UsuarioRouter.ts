@@ -6,7 +6,7 @@ import { AuthMiddlware } from "../Middlwares/AuthMiddlware";
 export class UsuarioRota {
     static Rotear(app: Express) {
         app.route("/usuario")
-            .get(UsuarioController.Listar);
+            .get(AuthMiddlware.Bearer, UsuarioController.Listar);
 
         app.route("/usuario/getUsu")
             .post(UsuarioController.GetUsuByEmail);
