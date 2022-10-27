@@ -1,0 +1,851 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  schemas  = ["semed_manaus", "bi_semed"]
+}
+
+
+model alerta {
+  ID_ALERTA             Int                           @id @default(autoincrement())
+  ID_SIMULADO_PROVA     Int?
+  MATRICULA             String?                       @db.VarChar(40)
+  ID_TURMA              Int?
+  ID_UNIDADE            Int?
+  NOME_ALUNO            String?                       @db.VarChar(120)
+  TIPO_ALERTA           alerta_TIPO_ALERTA
+  FOLDER_PDF            String                        @db.VarChar(255)
+  FOLDER_TXT            String?                       @db.VarChar(255)
+  DT_ALERTA             DateTime                      @default(now()) @db.Timestamp(0)
+  FLAG_DUPLI_PROCESSADA alerta_FLAG_DUPLI_PROCESSADA?
+  FLAG_TRATAR           alerta_FLAG_TRATAR            @default(S)
+  FLAG_PROCESSA         alerta_FLAG_PROCESSA          @default(N)
+  created_at            DateTime?                     @db.Timestamp(0)
+  updated_at            DateTime?                     @db.Timestamp(0)
+  simulado_prova        simulado_prova?               @relation(fields: [ID_SIMULADO_PROVA], references: [ID_SIMULADO_PROVA], onDelete: Restrict, onUpdate: Restrict, map: "alerta_id_simulado_prova_foreign")
+  turma                 turma?                        @relation(fields: [ID_TURMA], references: [ID_TURMA], onDelete: Restrict, onUpdate: Restrict, map: "alerta_id_turma_foreign")
+
+  @@index([ID_SIMULADO_PROVA], map: "alerta_id_simulado_prova_index")
+  @@index([ID_TURMA, ID_UNIDADE], map: "alerta_id_turma_id_unidade_index")
+}
+
+model aluno {
+  id            Int                 @id @default(autoincrement()) @db.UnsignedInt
+  MATRICULA     String              @db.VarChar(40)
+  NOME_ALUNO    String?             @db.VarChar(255)
+  ID_TURMA      Int
+  ID_UNIDADE    Int
+  INSERTBY      aluno_INSERTBY      @default(SISTEMA)
+  INSERTAT      DateTime            @default(now()) @db.Timestamp(0)
+  SENHA         String?             @db.VarChar(20)
+  SEXO          aluno_SEXO?
+  NECESSIDADES  aluno_NECESSIDADES?
+  ATIVO         aluno_ATIVO         @default(S)
+  RG            String?             @db.VarChar(100)
+  DT_NASCIMENTO DateTime?           @db.Date
+  CAMPUS        String?             @db.VarChar(255)
+  CURSO         String?             @db.VarChar(255)
+  TURNO         String?             @db.VarChar(255)
+  created_at    DateTime?           @db.Timestamp(0)
+  updated_at    DateTime?           @db.Timestamp(0)
+  deleted_at    DateTime?           @db.Timestamp(0)
+  is_deleted    Int                 @default(0) @db.UnsignedInt
+  turma         turma               @relation(fields: [ID_TURMA], references: [ID_TURMA], onUpdate: Restrict, map: "aluno_id_turma_foreign")
+
+  @@unique([MATRICULA, ID_TURMA, ID_UNIDADE, is_deleted], map: "aluno_matricula_id_turma_id_unidade_is_deleted_unique")
+  @@index([ID_TURMA, ID_UNIDADE], map: "aluno_id_turma_id_unidade_index")
+}
+
+model assunto {
+  ID_ASSUNTO    Int       @id @default(autoincrement())
+  DESC_ASSUNTO  String    @db.Text
+  ID_DISCIPLINA Int
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+
+  @@index([ID_DISCIPLINA], map: "assunto_id_disciplina_index")
+}
+
+model audit_resultado {
+  ID_AUDIT_RESULTADO Int       @id @default(autoincrement())
+  ID_SIMULADO_PROVA  Int
+  DATA_ALTERACAO     DateTime  @db.DateTime(0)
+  NOME_COLUNA        String    @db.VarChar(40)
+  VALOR_ANTERIOR     String    @db.Text
+  VALOR_POSTERIOR    String    @db.Text
+  MATRICULA          String    @db.VarChar(40)
+  ID_TURMA           Int
+  ID_UNIDADE         Int
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
+}
+
+model audit_simulado_prova {
+  ID_AUDIT_SIMULADO_PROVA Int       @id @default(autoincrement())
+  ID_SIMULADO_PROVA       Int
+  DATA_ALTERACAO          DateTime  @db.DateTime(0)
+  ID_USER                 Int
+  NOME_COLUNA             String    @db.VarChar(40)
+  VALOR_ANTERIOR          String    @db.Text
+  VALOR_POSTERIOR         String    @db.Text
+  created_at              DateTime? @db.Timestamp(0)
+  updated_at              DateTime? @db.Timestamp(0)
+}
+
+model controle_aplicacao {
+  ID_SIMULADO_PROVA          Int                                            @id
+  DT_PROCESSAMENTO           DateTime                                       @default(now()) @db.Timestamp(0)
+  ERRO_DADOS_ALUNO           Int?
+  CADERNOS_FALTANTES         Int?
+  ALUNOS_PRESENTES           Int?
+  ERRO_FOLHA_RESPOSTA        Int?
+  CADERNOS_PACOTE            Int?
+  CADERNOS_NAO_UTILIZADOS    Int?
+  CADERNOS_FALHA_IMP         Int?
+  NA_CHUVA                   String?                                        @db.Char(1)
+  NA_TRANSPORTE              String?                                        @db.Char(1)
+  NA_ENERGIA                 String?                                        @db.Char(1)
+  NA_SEGURANCA               String?                                        @db.Char(1)
+  NA_AGUA                    String?                                        @db.Char(1)
+  NA_OUTROS                  String?                                        @db.Char(1)
+  SN_ESTUDANTE_DEF           controle_aplicacao_SN_ESTUDANTE_DEF?
+  SN_PACOTE_LACRADO          controle_aplicacao_SN_PACOTE_LACRADO?
+  SN_EXEMP_PROF              controle_aplicacao_SN_EXEMP_PROF?
+  SN_EXEMP_PROF_ANO_AVALIADO controle_aplicacao_SN_EXEMP_PROF_ANO_AVALIADO?
+  SN_PACOTE_DISC_PROG        controle_aplicacao_SN_PACOTE_DISC_PROG?
+  SN_AUXILIO                 controle_aplicacao_SN_AUXILIO?
+  AVAL_ORIENTACOES           controle_aplicacao_AVAL_ORIENTACOES?
+  AVAL_ORGANIZACAO           controle_aplicacao_AVAL_ORGANIZACAO?
+  AVAL_INTERESSE             controle_aplicacao_AVAL_INTERESSE?
+  OP_ORGANIZAZAO_ESCOLA      controle_aplicacao_OP_ORGANIZAZAO_ESCOLA?
+  OP_INTERESSE_ESTUDANTES    controle_aplicacao_OP_INTERESSE_ESTUDANTES?
+  AVAL_ORIENT_ESCOLA         controle_aplicacao_AVAL_ORIENT_ESCOLA?
+  AVAL_ORIENT_GUIAS          controle_aplicacao_AVAL_ORIENT_GUIAS?
+  AVAL_ORIENT_PROCEDIMENTOS  controle_aplicacao_AVAL_ORIENT_PROCEDIMENTOS?
+  PATH                       String?                                        @db.VarChar(255)
+  created_at                 DateTime?                                      @db.Timestamp(0)
+  updated_at                 DateTime?                                      @db.Timestamp(0)
+
+  @@index([ID_SIMULADO_PROVA], map: "controle_aplicacao_id_simulado_prova_index")
+}
+
+model disciplina {
+  ID_DISCIPLINA    Int       @id @default(autoincrement())
+  DESC_DISCIPLINA  String    @db.VarChar(60)
+  ID_NIVEL         Int
+  ALIAS_DISCIPLINA String    @db.VarChar(20)
+  created_at       DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @db.Timestamp(0)
+  deleted_at       DateTime? @db.Timestamp(0)
+  nivel            nivel     @relation(fields: [ID_NIVEL], references: [ID_NIVEL], onUpdate: Restrict, map: "disciplina_id_nivel_foreign")
+
+  @@index([ID_NIVEL], map: "disciplina_id_nivel_index")
+}
+
+model distrito {
+  ID_DISTRITO Int       @id @default(autoincrement())
+  NOME        String    @db.VarChar(60)
+  DDZ         String    @unique(map: "distrito_ddz_unique") @db.VarChar(80)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+}
+
+model exports {
+  id         Int            @id @default(autoincrement()) @db.UnsignedInt
+  path       String
+  status     exports_status @default(processando)
+  contents   String?        @db.LongText
+  user_id    Int
+  created_at DateTime?      @db.Timestamp(0)
+  updated_at DateTime?      @db.Timestamp(0)
+  deleted_at DateTime?      @db.Timestamp(0)
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid       String   @unique(map: "failed_jobs_uuid_unique")
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model grupos {
+  id              BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  NOME            String                 @db.VarChar(50)
+  FOLHA_RESPOSTAS grupos_FOLHA_RESPOSTAS @default(C)
+  FOLHA_PERGUNTAS grupos_FOLHA_PERGUNTAS @default(C)
+  ALUNOS          grupos_ALUNOS          @default(C)
+  RESULTADOS      grupos_RESULTADOS      @default(N)
+  ALERTAS         grupos_ALERTAS         @default(S)
+  ADMINISTRACAO   grupos_ADMINISTRACAO   @default(S)
+  IMPORTACAO      grupos_IMPORTACAO      @default(S)
+  created_at      DateTime?              @db.Timestamp(0)
+  updated_at      DateTime?              @db.Timestamp(0)
+  deleted_at      DateTime?              @db.Timestamp(0)
+}
+
+model importacao {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  arquivo    String?   @db.VarChar(255)
+  linha      Int
+  descricao  String    @db.Text
+  id_user    Int
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model jobs {
+  id           BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  queue        String
+  payload      String @db.LongText
+  attempts     Int    @db.UnsignedTinyInt
+  reserved_at  Int?   @db.UnsignedInt
+  available_at Int    @db.UnsignedInt
+  created_at   Int    @db.UnsignedInt
+
+  @@index([queue], map: "jobs_queue_index")
+}
+
+model lista_presenca {
+  ID_LISTA_PRESENCA Int       @id @default(autoincrement())
+  ID_SIMULADO_PROVA Int       @default(0)
+  PAGINA            Int       @default(0)
+  TOTAL_PAGINAS     Int       @default(0)
+  DT_PROCESSAMENTO  DateTime  @default(now()) @db.Timestamp(0)
+  PATH              String    @db.Text
+  created_at        DateTime? @db.Timestamp(0)
+  updated_at        DateTime? @db.Timestamp(0)
+
+  @@index([ID_LISTA_PRESENCA], map: "lista_presenca_id_lista_presenca_index")
+  @@index([ID_SIMULADO_PROVA], map: "lista_presenca_id_simulado_prova_index")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String
+  batch     Int
+}
+
+model nivel {
+  ID_NIVEL   Int          @id @default(autoincrement())
+  DESC_NIVEL String       @unique(map: "nivel_desc_nivel_unique") @db.VarChar(40)
+  created_at DateTime?    @db.Timestamp(0)
+  updated_at DateTime?    @db.Timestamp(0)
+  disciplina disciplina[]
+}
+
+model notifications {
+  id              String    @id @db.Char(36)
+  type            String
+  notifiable_type String
+  notifiable_id   BigInt    @db.UnsignedBigInt
+  data            String    @db.Text
+  read_at         DateTime? @db.Timestamp(0)
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+
+  @@index([notifiable_type, notifiable_id], map: "notifications_notifiable_type_notifiable_id_index")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model numbers {
+  number Int?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model password_resets {
+  email      String
+  token      String
+  created_at DateTime? @db.Timestamp(0)
+
+  @@index([email], map: "password_resets_email_index")
+  @@ignore
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  tokenable_type String
+  tokenable_id   BigInt    @db.UnsignedBigInt
+  name           String
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model proc_template {
+  ID_PROC_TEMPLATE   Int                     @id @default(autoincrement())
+  ID_OPERACAO        String                  @unique(map: "proc_template_id_operacao_unique") @db.VarChar(30)
+  FLAG_EXEC          proc_template_FLAG_EXEC @default(S)
+  STATUS             proc_template_STATUS    @default(PROC)
+  QTD_TURMA_CORRENTE Int                     @default(0)
+  QTD_TURMA_TOTAL    Int                     @default(0)
+  created_at         DateTime?               @db.Timestamp(0)
+  updated_at         DateTime?               @db.Timestamp(0)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model questao {
+  ID_QUESTAO            Int
+  QUESTAO               String              @db.Text
+  RESPOSTAS             String              @db.Text
+  QTD_COLUNAS_RESPOSTAS Int
+  ANSWER_KEY_RESPOSTA   String              @db.VarChar(20)
+  ID_NIVEL              Int
+  DIFICULDADE           questao_DIFICULDADE
+  ID_ASSUNTO            Int
+  ID_DISCIPLINA         Int
+  FOLDER_IMG            String              @db.VarChar(250)
+  created_at            DateTime?           @db.Timestamp(0)
+  updated_at            DateTime?           @db.Timestamp(0)
+
+  @@index([ID_ASSUNTO, ID_DISCIPLINA], map: "questao_id_assunto_id_disciplina_index")
+  @@index([ID_NIVEL], map: "questao_id_nivel_index")
+  @@ignore
+}
+
+model resultado {
+  id                       Int                                 @id @default(autoincrement())
+  ID_SIMULADO_PROVA        Int
+  MATRICULA                String                              @db.VarChar(40)
+  ID_TURMA                 Int
+  ID_UNIDADE               Int
+  REDACAO                  Float?
+  NOTA                     Float?
+  ACERTOS                  Int?
+  ERROS                    Int?
+  BRANCO                   Int?
+  RASURADAS                Int?
+  ERROR_GRAVIC             Int?
+  ANULADAS                 Int?
+  FOLDER_GABARITO          String?                             @db.VarChar(255)
+  ANSWER_KEY_ALUNO         String?                             @db.Text
+  DT_PROCESSAMENTO         DateTime                            @default(now()) @db.Timestamp(0)
+  FLAG_FALTA               resultado_FLAG_FALTA?
+  FLAG_SEM_RESPOSTA_TESTE  resultado_FLAG_SEM_RESPOSTA_TESTE?
+  FLAG_SEM_RESPOSTA_CARTAO resultado_FLAG_SEM_RESPOSTA_CARTAO?
+  FLAG_PROF_TRANS          resultado_FLAG_PROF_TRANS?
+  FLAG_DEFICIENTE          resultado_FLAG_DEFICIENTE?
+  FLAG_ABANDONO            resultado_FLAG_ABANDONO?
+  FLAG_TRANSFERIDO         resultado_FLAG_TRANSFERIDO?
+  COD_DEFICIENCIA          String?                             @db.Char(1)
+  FLAG_PROCESSA            resultado_FLAG_PROCESSA?
+  FLAG_EM_PROCESSAMENTO    resultado_FLAG_EM_PROCESSAMENTO?    @default(N)
+  ID_USER                  Int?
+  created_at               DateTime?                           @db.Timestamp(0)
+  updated_at               DateTime?                           @db.Timestamp(0)
+  simulado_prova           simulado_prova                      @relation(fields: [ID_SIMULADO_PROVA], references: [ID_SIMULADO_PROVA], onUpdate: Restrict, map: "resultado_id_simulado_prova_foreign")
+  
+
+  @@unique([ID_SIMULADO_PROVA, MATRICULA, ID_TURMA, ID_UNIDADE], map: "ID_SIMULADO_PROVA_MATRICULA_ID_TURMA_ID_UNIDADE")
+  @@unique([ID_SIMULADO_PROVA, MATRICULA, ID_TURMA, ID_UNIDADE], map: "unique_resultado")
+  @@index([MATRICULA, ID_TURMA, ID_UNIDADE], map: "resultado_matricula_composite_foreign")
+}
+
+model sessions {
+  id            String  @id
+  user_id       BigInt? @db.UnsignedBigInt
+  ip_address    String? @db.VarChar(45)
+  user_agent    String? @db.Text
+  payload       String  @db.Text
+  last_activity Int
+
+  @@index([last_activity], map: "sessions_last_activity_index")
+  @@index([user_id], map: "sessions_user_id_index")
+}
+
+model simulado_prova {
+  ID_SIMULADO_PROVA         Int                                @id @default(autoincrement())
+  ID_TURMA                  Int
+  ID_UNIDADE                Int
+  ID_TEMPLATE               Int
+  ID_USER                   Int
+  NOME_SIMULADO_PROVA       String                             @db.VarChar(200)
+  ALIAS_NOME_SIMULADO_PROVA String                             @db.VarChar(200)
+  ANSWER_KEY                String                             @db.Text
+  ANSWER_DISCIPLINA         String                             @db.Text
+  ANSWER_PESO_QUESTAO       String                             @db.Text
+  ANSWER_PESO_ALTERADO      String?                            @db.Text
+  ANSWER_DIFICULDADE        String                             @db.Text
+  ANSWER_ASSUNTO            String                             @db.Text
+  ANSWER_CANCELADA          String                             @db.Text
+  DATA_SIMULADO_PROVA       DateTime                           @db.Date
+  DT_CRIACAO                DateTime                           @default(now()) @db.Timestamp(0)
+  CANCELADA                 simulado_prova_CANCELADA           @default(N)
+  PROVA                     simulado_prova_PROVA               @default(N)
+  FLAG_CONJUNTO_TURMA       simulado_prova_FLAG_CONJUNTO_TURMA @default(S)
+  ID_CONJUNTO_TURMA         String?                            @db.VarChar(50)
+  FLAG_REDACAO              simulado_prova_FLAG_REDACAO        @default(N)
+  PESO_REDACAO              Float
+  PESO_REDACAO_ALTERADO     Boolean                            @default(false)
+  created_at                DateTime?                          @db.Timestamp(0)
+  updated_at                DateTime?                          @db.Timestamp(0)
+  deleted_at                DateTime?                          @db.Timestamp(0)
+  template                  template                           @relation(fields: [ID_TEMPLATE], references: [ID_TEMPLATE], onUpdate: Restrict, map: "simulado_prova_id_template_foreign")
+  turma                     turma                              @relation(fields: [ID_TURMA], references: [ID_TURMA], onUpdate: Restrict, map: "simulado_prova_id_turma_foreign")
+  users                     users                              @relation(fields: [ID_USER], references: [id], onUpdate: Restrict, map: "simulado_prova_id_user_foreign")
+  alerta                    alerta[]
+  resultado                 resultado[]
+
+  @@index([ID_TEMPLATE], map: "simulado_prova_id_template_index")
+  @@index([ID_TURMA, ID_UNIDADE], map: "simulado_prova_id_turma_id_unidade_index")
+  @@index([ID_USER], map: "simulado_prova_id_user_index")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model simulado_prova_questao {
+  ID_SIMULADO_PROVA Int
+  ID_QUESTAO        Int
+  NUM_QUESTAO       Int
+  created_at        DateTime? @db.Timestamp(0)
+  updated_at        DateTime? @db.Timestamp(0)
+
+  @@index([ID_QUESTAO], map: "simulado_prova_questao_id_questao_index")
+  @@ignore
+}
+
+model team_user {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  team_id    BigInt    @db.UnsignedBigInt
+  user_id    BigInt    @db.UnsignedBigInt
+  role       String?
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+
+  @@unique([team_id, user_id], map: "team_user_team_id_user_id_unique")
+}
+
+model teams {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id       BigInt    @db.UnsignedBigInt
+  name          String
+  personal_team Boolean
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+
+  @@index([user_id], map: "teams_user_id_index")
+}
+
+model template {
+  ID_TEMPLATE         Int              @id @default(autoincrement())
+  DESC_TEMPLATE       String?          @db.VarChar(120)
+  FOLDER_TEMPLATE_REZ String?          @db.VarChar(255)
+  FOLDER_TEMPLATE_IMG String           @db.VarChar(255)
+  OMR_TEMPLATE        String?          @db.VarChar(255)
+  QTD_QUESTOES        Int?
+  QTD_COLUNAS         Int?
+  ID_DISC_QTD_QUESTAO String?          @db.VarChar(50)
+  VERSAO              String?          @db.Char(4)
+  ATIVO               template_ATIVO   @default(S)
+  created_at          DateTime?        @db.Timestamp(0)
+  updated_at          DateTime?        @db.Timestamp(0)
+  simulado_prova      simulado_prova[]
+}
+
+model turma {
+  ID_TURMA       Int              @id @default(autoincrement())
+  NOME_TURMA     String           @db.VarChar(255)
+  ID_UNIDADE     Int
+  ANO_LETIVO     Int
+  TURNO          turma_TURNO
+  ANO_ESCOLAR    Int
+  COMP_ANO       String?          @db.VarChar(50)
+  created_at     DateTime?        @db.Timestamp(0)
+  updated_at     DateTime?        @db.Timestamp(0)
+  deleted_at     DateTime?        @db.Timestamp(0)
+  unidade        unidade          @relation(fields: [ID_UNIDADE], references: [ID_UNIDADE], onUpdate: Restrict, map: "turma_id_unidade_foreign")
+  alerta         alerta[]
+  aluno          aluno[]
+  simulado_prova simulado_prova[]
+
+  @@index([ID_UNIDADE], map: "turma_id_unidade_index")
+}
+
+model unidade {
+  ID_UNIDADE          Int           @id @default(autoincrement())
+  SIGEAM              Int?
+  COD_INEP            Int?
+  NOME_UNIDADE        String        @db.VarChar(255)
+  CNPJ                String?       @db.VarChar(14)
+  NOME_CONTATO        String?       @db.VarChar(255)
+  TEL_CONTATO         String?       @db.VarChar(40)
+  EMAIL_CONTATO       String?       @db.VarChar(255)
+  FOLDER_LOGO_CLIENTE String?       @db.VarChar(255)
+  FOLDER_LOGO_UNIDADE String?       @db.VarChar(255)
+  MATRICULA_MIN       Int           @default(1)
+  MATRICULA_MAX       Int           @default(11)
+  ATIVO               unidade_ATIVO @default(S)
+  ID_DISTRITO         Int?
+  MUNICIPIO           String?       @db.VarChar(50)
+  created_at          DateTime?     @db.Timestamp(0)
+  updated_at          DateTime?     @db.Timestamp(0)
+  deleted_at          DateTime?     @db.Timestamp(0)
+  turma               turma[]
+  users               users[]
+
+  @@index([ID_UNIDADE], map: "unidade_id_unidade_index")
+}
+
+model users {
+  id                        Int              @id @default(autoincrement())
+  name                      String
+  email                     String
+  email_verified_at         DateTime?        @db.Timestamp(0)
+  password                  String
+  two_factor_secret         String?          @db.Text
+  two_factor_recovery_codes String?          @db.Text
+  remember_token            String?          @db.VarChar(100)
+  current_team_id           BigInt?          @db.UnsignedBigInt
+  profile_photo_path        String?          @db.Text
+  created_at                DateTime?        @db.Timestamp(0)
+  updated_at                DateTime?        @db.Timestamp(0)
+  ID_UNIDADE                Int?
+  ID_DISTRITO               Int?
+  ID_GRUPO                  Int
+  deleted_at                DateTime?        @db.Timestamp(0)
+  unidade                   unidade?         @relation(fields: [ID_UNIDADE], references: [ID_UNIDADE], onDelete: Restrict, onUpdate: Restrict, map: "users_id_unidade_foreign")
+  simulado_prova            simulado_prova[]
+
+  @@index([ID_UNIDADE], map: "users_id_unidade_foreign")
+}
+
+
+model log {
+  id_log Int              @id @default(autoincrement())
+  id_user Int
+  acesso DateTime?        @db.Timestamp(0)
+  @@schema("bi_semed")
+}
+ 
+
+
+enum exports_status {
+  sucesso
+  falha
+  processando
+}
+
+enum grupos_FOLHA_RESPOSTAS {
+  C
+  R
+  N
+}
+
+enum proc_template_FLAG_EXEC {
+  S
+  N
+}
+
+enum grupos_FOLHA_PERGUNTAS {
+  C
+  R
+  N
+}
+
+enum proc_template_STATUS {
+  PROC
+  CANCELADO
+  CONCLUIDO
+}
+
+enum grupos_ALUNOS {
+  C
+  R
+  N
+}
+
+enum turma_TURNO {
+  M
+  V
+  N
+  I
+}
+
+enum aluno_INSERTBY {
+  SISTEMA
+  GENERICO
+}
+
+enum grupos_RESULTADOS {
+  CEI
+  CE
+  CI
+  EI
+  C
+  E
+  I
+  N
+}
+
+enum alerta_TIPO_ALERTA {
+  IMG_ERRO
+  MATRI_ERRO
+  DUPLI
+  GENERICO
+  APLICADOR
+  CTR_DUPLI
+  CTR_ERRO
+  LST_DUPLI
+  LST_ERRO
+  REPROC
+}
+
+enum grupos_ALERTAS {
+  S
+  N
+}
+
+enum questao_DIFICULDADE {
+  Muito_F_cil   @map("Muito Fácil")
+  F_cil         @map("Fácil")
+  Moderado
+  Dif_cil       @map("Difícil")
+  Muito_Dif_cil @map("Muito Difícil")
+}
+
+enum grupos_ADMINISTRACAO {
+  S
+  N
+}
+
+enum aluno_SEXO {
+  M
+  F
+}
+
+enum grupos_IMPORTACAO {
+  S
+  N
+}
+
+enum aluno_NECESSIDADES {
+  CEGUEIRA
+  BAIXA_VISAO
+  DEF_AUDITIVO
+}
+
+enum template_ATIVO {
+  S
+  N
+}
+
+enum alerta_FLAG_DUPLI_PROCESSADA {
+  S
+  N
+}
+
+enum aluno_ATIVO {
+  S
+  N
+}
+
+enum alerta_FLAG_TRATAR {
+  S
+  N
+}
+
+enum alerta_FLAG_PROCESSA {
+  S
+  N
+}
+
+enum unidade_ATIVO {
+  S
+  N
+}
+
+enum controle_aplicacao_SN_ESTUDANTE_DEF {
+  S
+  N
+  BLANK
+  RASURADO
+}
+
+enum controle_aplicacao_SN_PACOTE_LACRADO {
+  S
+  N
+  BLANK
+  RASURADO
+}
+
+enum resultado_FLAG_FALTA {
+  S
+  N
+}
+
+enum simulado_prova_CANCELADA {
+  S
+  N
+}
+
+enum controle_aplicacao_SN_EXEMP_PROF {
+  S
+  N
+  BLANK
+  RASURADO
+}
+
+enum resultado_FLAG_SEM_RESPOSTA_TESTE {
+  S
+  N
+}
+
+enum simulado_prova_PROVA {
+  S
+  N
+}
+
+enum controle_aplicacao_SN_EXEMP_PROF_ANO_AVALIADO {
+  S
+  N
+  BLANK
+  RASURADO
+}
+
+enum resultado_FLAG_SEM_RESPOSTA_CARTAO {
+  S
+  N
+}
+
+enum simulado_prova_FLAG_CONJUNTO_TURMA {
+  S
+  N
+}
+
+enum controle_aplicacao_SN_PACOTE_DISC_PROG {
+  S
+  N
+  BLANK
+  RASURADO
+}
+
+enum resultado_FLAG_PROF_TRANS {
+  S
+  N
+}
+
+enum controle_aplicacao_SN_AUXILIO {
+  S
+  N
+  BLANK
+  RASURADO
+}
+
+enum resultado_FLAG_DEFICIENTE {
+  S
+  N
+}
+
+enum simulado_prova_FLAG_REDACAO {
+  S
+  N
+}
+
+enum controle_aplicacao_AVAL_ORIENTACOES {
+  OTIMO
+  BOM
+  REGULAR
+  RUIM
+  NT
+  BLANK
+  RASURADO
+}
+
+enum resultado_FLAG_ABANDONO {
+  S
+  N
+}
+
+enum controle_aplicacao_AVAL_ORGANIZACAO {
+  OTIMO
+  BOM
+  REGULAR
+  RUIM
+  NT
+  BLANK
+  RASURADO
+}
+
+enum resultado_FLAG_TRANSFERIDO {
+  S
+  N
+}
+
+enum controle_aplicacao_AVAL_INTERESSE {
+  OTIMO
+  BOM
+  REGULAR
+  RUIM
+  NT
+  BLANK
+  RASURADO
+}
+
+enum controle_aplicacao_OP_ORGANIZAZAO_ESCOLA {
+  BOM
+  REGULAR
+  RUIM
+  NH
+  BLANK
+  RASURADO
+}
+
+enum resultado_FLAG_PROCESSA {
+  S
+  N
+}
+
+enum controle_aplicacao_OP_INTERESSE_ESTUDANTES {
+  BOM
+  REGULAR
+  RUIM
+  NH
+  BLANK
+  RASURADO
+}
+
+enum resultado_FLAG_EM_PROCESSAMENTO {
+  S
+  N
+}
+
+enum controle_aplicacao_AVAL_ORIENT_ESCOLA {
+  BOM
+  REGULAR
+  RUIM
+  NH
+  NP
+  BLANK
+  RASURADO
+}
+
+enum controle_aplicacao_AVAL_ORIENT_GUIAS {
+  BOM
+  REGULAR
+  RUIM
+  NH
+  NP
+  BLANK
+  RASURADO
+}
+
+enum controle_aplicacao_AVAL_ORIENT_PROCEDIMENTOS {
+  BOM
+  REGULAR
+  RUIM
+  NH
+  NP
+  BLANK
+  RASURADO
+}
