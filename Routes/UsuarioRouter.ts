@@ -9,7 +9,7 @@ export class UsuarioRota {
             .get(AuthMiddlware.Bearer, UsuarioController.Listar);
 
         app.route("/usuario/getUsu")
-            .post(UsuarioController.GetUsuByEmail);
+            .post(AuthMiddlware.Bearer,UsuarioController.GetUsuByEmail);
 
         app.route("/usuario/getbyid")
             .post(AuthMiddlware.Bearer, UsuarioController.GetUsuById);
