@@ -1,0 +1,2 @@
+::1 - - [31/37/2022 11:10:02] "GET /usuario HTTP/1.1" 200 27 "-" "PostmanRuntime/7.29.2"
+::1 - - [31/37/2022 11:10:05] "GET /usuario HTTP/1.1" 200 27 "-" "PostmanRuntime/7.29.2"

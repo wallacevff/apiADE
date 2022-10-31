@@ -1,6 +1,4 @@
 import { Request, Response } from "express";
-import { Token } from "../Services/TokenService";
-import { UsuarioService } from "../Services/UsuarioService";
 import { LogUsersService } from "../Services/LogUsersService";
 import { LogAcessosModel } from "../Models/LogAcessosModel";
 export class LogAcessosController {

@@ -3,6 +3,9 @@ import { UsuarioModel } from "../Models/UsuarioModel";
 import { Token } from "../Services/TokenService";
 import { UsuarioService } from "../Services/UsuarioService";
 import { LogUsersService } from "../Services/LogUsersService";
+const path : string = "[/Controllers/UsuarioController/";
+
+
 export class UsuarioController {
     static Listar = async (req: Request, res: Response) => {
         const users: Array<UsuarioModel> = await UsuarioService.ListAllUsers();
@@ -51,11 +54,12 @@ export class UsuarioController {
         if (foundUser.length < 1) {
             return res.json({ erro: "Usuário não encontrado!" });
         }
+        res.setHeader("Authorization", Token.CeateToken(foundUser[0] as UsuarioModel));
         return res.send(foundUser[0]);
     }
 
     static Log = async (req: Request, res: Response) => {
-        console.log("Log Request");
+       // console.log("Log Request");
         await LogUsersService.CreateLogUser(req.body);
         return res.status(201).send();
     }
